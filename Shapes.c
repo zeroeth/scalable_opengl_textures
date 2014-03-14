@@ -17,8 +17,8 @@ void jSquare( int size )
       
    glBegin(GL_QUADS);
    {
-     //glColor4ub( 0, 255, 0, 255 );   
-     glColor4f(1.0f,1.0f,1.0f,1.0f);
+     glColor4ub( 255, 0, 255, 255 );   
+     //glColor4f(1.0f,1.0f,1.0f,1.0f);
      
      glTexCoord2i( 0, 1 ); //1
      glVertex2i  ( 0, 0 );

@@ -5,12 +5,13 @@
 //
 
 #include <SDL.h>                      /* Display/Input Library       */
+#include <SDL_opengl.h>               /* OpenGL Cross Platform       */
+
 
 #include <IL/il.h>                        /* DevIL Image Lib w/openGL    */
 #include <IL/ilu.h>
 #include <IL/ilut.h>
 
-#include <SDL_opengl.h>                   /* OpenGL Cross Platform       */
 
 #include <AntTweakBar.h>                  /* Ant GUI for Var changing    */
 
@@ -24,10 +25,6 @@
 #include <librsvg/rsvg.h>
 #include <librsvg/rsvg-cairo.h>
 
-
-#ifdef main
-#undef main
-#endif
 
 int main(int argc, char *argv[]){
   
@@ -79,14 +76,12 @@ int main(int argc, char *argv[]){
 //// SDL/GL INIT //////////////////////////////////////////////////////////
 
   SDL_Init        ( SDL_INIT_VIDEO );
-  SDL_SetVideoMode( width, height, 0, SDL_OPENGL
-                                    /*| SDL_FULLSCREEN*/
-                                    | SDL_HWSURFACE );
+  SDL_SetVideoMode( width, height, 0, SDL_OPENGL | SDL_HWSURFACE );
 
   //SDL_ShowCursor  ( SDL_DISABLE );
   glViewport  ( 0, 0, width, height    ); /* screen <-> windows coords   */
   
-  glClearColor( 1.0f, 1.0f, 1.0f, 0.5f ); /* Screen Clear Color          */
+  glClearColor( 0.0f, 0.0f, 0.0f, 0.5f ); /* Screen Clear Color          */
   
   glClearDepth( 1.0           );          /* Clears Depth Buffer upto X  */
   //glDepthFunc ( GL_LEQUAL  );           /* How openGL handles Depth    */
@@ -98,10 +93,10 @@ int main(int argc, char *argv[]){
   glBlendFunc ( GL_SRC_ALPHA,             /* Blending Type               */
                 GL_ONE_MINUS_SRC_ALPHA );
 
-  ilInit  ( );                            /* DevIL Init Section          */
-  iluInit ( );
-  ilutRenderer( ILUT_OPENGL );
-  ilutInit( );
+  //ilInit  ( );                            /* DevIL Init Section          */
+  //iluInit ( );
+  //ilutRenderer( ILUT_OPENGL );
+  //ilutInit( );
   
   TwInit      ( TW_OPENGL, NULL );        /* Ant Tweak Bar               */
   TwWindowSize( width, height   );
@@ -128,14 +123,47 @@ int main(int argc, char *argv[]){
 
                                           /* Img Library, Load our Image */
                                           /* Calls glGenTextures for you */
-  unsigned int texid = ilutGLLoadImage( "kitty1.png" );
+  //unsigned int texid = ilutGLLoadImage( "kitty1.png" );
+
+  ILuint texid;
+  ILboolean success;
+  GLuint image;
+
+  ilInit(); /* Initialization of DevIL */
+  ilGenImages(1, &texid); /* Generation of one image name */
+  ilBindImage(texid); /* Binding of image name */
+  success = ilLoadImage("kitty1.png"); /* Loading of image "image.jpg" */
+  if(success) {
+	  std::cout << "loaded:" << success << std::endl;
+  }
+  success = ilConvertImage(IL_RGBA, IL_UNSIGNED_BYTE);
+
+  if(success) {
+	  std::cout << "converted:" << success << std::endl;
+  }
+
+  glGenTextures(1, &image); /* Texture name generation */
+  glBindTexture(GL_TEXTURE_2D, image); /* Binding of texture name */
+  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR); /* We will use linear interpolation for magnification filter */
+  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR); /* We will use linear interpolation for minifying filter */
+  glTexImage2D(
+		GL_TEXTURE_2D,
+		0,
+		ilGetInteger(IL_IMAGE_BPP),
+		ilGetInteger(IL_IMAGE_WIDTH),
+		ilGetInteger(IL_IMAGE_HEIGHT),
+		0,
+		ilGetInteger(IL_IMAGE_FORMAT),
+		GL_UNSIGNED_BYTE,
+		ilGetData()); /* Texture specification */  
+
                                 /* make a reuse func to contain all this */
   
   glPixelStorei(GL_UNPACK_ALIGNMENT, 1);  /* ?? */
 
   glEnable ( GL_TEXTURE_2D );             /* Enable texturing in openGL  */
     
-  glBindTexture( GL_TEXTURE_2D, texid );  /* Make texid active for below */
+  glBindTexture( GL_TEXTURE_2D, image );  /* Make texid active for below */
                                             
   //glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST );
   //glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST );
@@ -189,6 +217,9 @@ cairo_scale(cCtex, bSize, bSize);         /* Normalize Size to Texture   */
 rsvg_handle_render_cairo( rSVG, cCtex );  /* Render into Tex Fullsize    */
 
 
+GLuint svgglimage;
+glGenTextures(1, &svgglimage);
+glBindTexture( GL_TEXTURE_2D, svgglimage );  /* Make texid active for below */
 glTexImage2D( GL_TEXTURE_2D,              /* Texture Type                */
                           0,              /* LOD lvl can have >1 per tex */
                    GL_RGBA8,              /* Internal Color Format (3)   */
@@ -229,7 +260,8 @@ glTexImage2D( GL_TEXTURE_2D,              /* Texture Type                */
     
     while( SDL_PollEvent(&event) )
     {
-      if( !TwEventSDL(&event) )           /* Pass if not used by Ant     */
+                                          /* Pass if not used by Ant     */
+      if( !TwEventSDL(&event, SDL_MAJOR_VERSION, SDL_MINOR_VERSION) )
       {
         switch( event.type )
         {
@@ -282,7 +314,14 @@ glTexImage2D( GL_TEXTURE_2D,              /* Texture Type                */
                                           /* Calculate Length            */
     vLength = sqrt( pow(xA-xB, 2) + pow(yA-yB, 2) );
       
-    glBindTexture( GL_TEXTURE_2D, texid );/* Set Texture to Kitty        */
+    glBindTexture( GL_TEXTURE_2D, image );/* Set Texture to Kitty        */
+	glBegin( GL_QUADS );
+		glColor4ub( 0, 255, 255, 255 );   
+		glTexCoord2d(0.0,0.0); glVertex2d(  0.0,  0.0);
+		glTexCoord2d(1.0,0.0); glVertex2d(100.0,  0.0);
+		glTexCoord2d(1.0,1.0); glVertex2d(100.0,100.0);
+		glTexCoord2d(0.0,1.0); glVertex2d(  0.0,100.0);
+	glEnd();	
 
     for(int i = 0; i < catnodes; i++)     /* Loop and draw points around */
     {
