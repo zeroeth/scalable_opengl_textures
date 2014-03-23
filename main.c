@@ -188,7 +188,7 @@ int                tSize = 256;           /* Destination Size            */
 g_type_init();                            /* Glib Init (Needed for data) */
 
                                           /* Load the SVG file           */
-rSVG = rsvg_handle_new_from_file( "screen.svg", &pError );
+rSVG = rsvg_handle_new_from_file( "ballInkscape.svg", &pError );
 
 if(pError != NULL)                        /* Is everything OK ?          */
   std::cout << "ERR: " << pError->message;
@@ -216,17 +216,19 @@ cairo_scale(cCtex, bSize, bSize);         /* Normalize Size to Texture   */
 
 rsvg_handle_render_cairo( rSVG, cCtex );  /* Render into Tex Fullsize    */
 
+cairo_surface_write_to_png(cSurf, "cSurf.png");
 
 GLuint svgglimage;
 glGenTextures(1, &svgglimage);
 glBindTexture( GL_TEXTURE_2D, svgglimage );  /* Make texid active for below */
 glTexImage2D( GL_TEXTURE_2D,              /* Texture Type                */
                           0,              /* LOD lvl can have >1 per tex */
-                   GL_RGBA8,              /* Internal Color Format (3)   */
-                      tSize,              /* Size W and H                */
-                      tSize,
+                   GL_RGBA,              /* Internal Color Format (3)   */
+										  /* Size W and H                */
+	 cairo_image_surface_get_width( cSurf ),
+    cairo_image_surface_get_height( cSurf ),
                           0,              /* Image Border                */
-                     J_BGRA,              /* Color Format of Source Img  */
+	                 GL_BGRA,              /* Color Format of Source Img  */
            GL_UNSIGNED_BYTE,              /* Data Format of Source Img   */
            cairo_image_surface_get_data( cairo_get_target( cCtex ) )
             );                            /* The Image Data itself       */
@@ -322,6 +324,9 @@ glTexImage2D( GL_TEXTURE_2D,              /* Texture Type                */
 		glTexCoord2d(1.0,1.0); glVertex2d(100.0,100.0);
 		glTexCoord2d(0.0,1.0); glVertex2d(  0.0,100.0);
 	glEnd();	
+
+										  /* Set Texture to Ball         */
+    glBindTexture( GL_TEXTURE_2D, svgglimage );
 
     for(int i = 0; i < catnodes; i++)     /* Loop and draw points around */
     {
