@@ -2,8 +2,8 @@
    **   Shape Functions   **
     **    Header File    **
      ********************/
-     
-     
+
+
 #include <SDL.h>
 #include <SDL_opengl.h>                   /* OpenGL Cross Platform       */
 
