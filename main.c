@@ -30,12 +30,13 @@ int main(int argc, char *argv[]){
 
 //// VARS /////////////////////////////////////////////////////////////////
 
-  int width  = 640;                       /* Screen Dimensions           */
-  int height = 480;
+  int width  = 1024;                      /* Screen Dimensions           */
+  int height = 768;
   int whalf  = width/2;                   /* for angle comparison        */
   int hhalf  = height/2;
 
   SDL_Event event;                        /* SDL Event Holder            */
+  SDL_Surface *screen;                    /* SDL Screen Surface          */
 
   GLfloat theta = 0.0f;                   /* Rotation Var                */
   GLfloat rotspeed = .5f;                 /* Rotation Speed              */
@@ -46,7 +47,6 @@ int main(int argc, char *argv[]){
   } mouse;
 
   GLuint       texture;                   /* holds openGL generated ID   */
-  SDL_Surface *sdlsurf;                   /* SDL Load Image              */
 
   int numleafs = 5;                       /* How many Tree's to display  */
   int degspace = 360/numleafs;            /* Offset between Tree's       */
@@ -75,6 +75,13 @@ int main(int argc, char *argv[]){
 //// SDL/GL INIT //////////////////////////////////////////////////////////
 
   SDL_Init        ( SDL_INIT_VIDEO );
+
+  /* Native resolution */
+  //screen = SDL_SetVideoMode( 0, 0, 0, SDL_OPENGL | SDL_HWSURFACE );
+  //height = screen->h;
+  //width  = screen->w;
+
+  /* Sized Window */
   SDL_SetVideoMode( width, height, 0, SDL_OPENGL | SDL_HWSURFACE );
 
   //SDL_ShowCursor  ( SDL_DISABLE );
@@ -309,20 +316,8 @@ glTexImage2D(
                                           /* Set Texture to Ball         */
     glBindTexture( GL_TEXTURE_2D, svgglimage );
 
-    for(int i = 0; i < catnodes; i++)     /* Loop and draw points around */
-    {
-        glPushMatrix();                   /* Origin to come back to      */
 
-                                          /* Rotate to face mouse        */
-        glRotatef( vAngle + (i * (360.0/catnodes)), 0.0f, 0.0f, 1.0f );
-
-        glTranslated( vLength, 0, 0 );    /* Move out "Length" units     */
-
-        jSquare( 256 );
-
-        glPopMatrix( );
-
-    }
+    jTree(3, 128, 0.5, 100, 0.5, 3, 1.0, vAngle);
 
 
     /* Important corner texture */
@@ -330,7 +325,7 @@ glTexImage2D(
 
     glBindTexture( GL_TEXTURE_2D, image);/* Set Texture to Kitty        */
     glBegin( GL_QUADS );
-        glColor4ub( 255, 255, 0, 255 );
+        glColor4ub( 0, 255, 255, 255 );  /* Zombie Cat                  */
         glTexCoord2d(1.0,1.0); glVertex2d(  0.0,  0.0);
         glTexCoord2d(0.0,1.0); glVertex2d(100.0,  0.0);
         glTexCoord2d(0.0,0.0); glVertex2d(100.0,100.0);
